@@ -41,9 +41,9 @@ pub mod branching_comics {
     // Chapter
     // ==========
 
-    pub fn init_chapter(ctx: Context<InitChapter>) -> Result<()> {
+    pub fn init_chapter(ctx: Context<InitChapter>, is_start: bool) -> Result<()> {
         
-        Ok(())
+        ctx.accounts.init_chapter(is_start, &ctx.bumps)
     }
 
     pub fn list_chapter(ctx: Context<ListChapter>) -> Result<()> {
