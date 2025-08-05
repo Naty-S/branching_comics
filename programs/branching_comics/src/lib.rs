@@ -27,9 +27,9 @@ pub mod branching_comics {
     // Comic
     // ==========
 
-    pub fn init_comic(ctx: Context<InitComic>) -> Result<()> {
+    pub fn init_comic(ctx: Context<InitComic>, title: String) -> Result<()> {
         
-        Ok(())
+        ctx.accounts.init_comic(title, &ctx.bumps)
     }
 
     pub fn publish_comic(ctx: Context<PublishComic>) -> Result<()> {
