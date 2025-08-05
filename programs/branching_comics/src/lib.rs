@@ -17,14 +17,16 @@ pub mod branching_comics {
     // ==========
     // User
     // ==========
-    pub fn init_user(ctx: Context<InitUser>) -> Result<()> {
+
+    pub fn init_user(ctx: Context<InitUser>, is_creator: bool) -> Result<()> {
         
-        Ok(())
+        ctx.accounts.init_user(is_creator, &ctx.bumps)
     }
 
     // ==========
     // Comic
     // ==========
+
     pub fn init_comic(ctx: Context<InitComic>) -> Result<()> {
         
         Ok(())
@@ -38,17 +40,16 @@ pub mod branching_comics {
     // ==========
     // Chapter
     // ==========
+
     pub fn init_chapter(ctx: Context<InitChapter>) -> Result<()> {
         
         Ok(())
     }
 
-
     pub fn list_chapter(ctx: Context<ListChapter>) -> Result<()> {
         
         Ok(())
     }
-
 
     pub fn purchase_chapter(ctx: Context<PurchaseChapter>) -> Result<()> {
         
@@ -58,6 +59,7 @@ pub mod branching_comics {
     // ==========
     // Choice
     // ==========
+    
     pub fn init_choice(ctx: Context<InitChoice>) -> Result<()> {
         
         Ok(())
