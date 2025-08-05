@@ -60,9 +60,9 @@ pub mod branching_comics {
     // Choice
     // ==========
     
-    pub fn init_choice(ctx: Context<InitChoice>) -> Result<()> {
+    pub fn init_choice(ctx: Context<InitChoice>, choice: String) -> Result<()> {
         
-        Ok(())
+        ctx.init_choice(choice, &ctx.bumps)
     }
 
     pub fn make_choice(ctx: Context<MakeChoice>) -> Result<()> {
