@@ -15,7 +15,7 @@ pub struct InitComic<'info> {
     seeds = [
       b"user",
       user_account.user.key().as_ref(),
-      user_account.is_creator.to_string().as_bytes()
+      user_account.creator.to_string().as_bytes()
     ],
     bump = user_account.bump
   )]
@@ -23,7 +23,7 @@ pub struct InitComic<'info> {
 
   #[account(
     init,
-    payer = creator,
+    payer = user,
     seeds = [
       b"comic",
       user.key().as_ref(),
@@ -31,7 +31,7 @@ pub struct InitComic<'info> {
     ],
     space = 8 + Comic::INIT_SPACE,
     bump,
-    constraint = user_account.is_creator == true // only a creator can make comics
+    constraint = user_account.creator == true // only a creator can make comics
   )]
   pub comic: Account<'info, Comic>,
 

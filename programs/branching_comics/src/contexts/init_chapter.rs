@@ -1,14 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    associated_token::AssociatedToken
-  , metadata::{
+    metadata::{
       MasterEditionAccount
     , Metadata
     , MetadataAccount
   }
   , token_interface::{
       Mint
-    , TokenAccount
     , TokenInterface
   }
 };
@@ -36,7 +34,7 @@ pub struct InitChapter<'info> {
     seeds = [
       b"user",
       user_account.user.key().as_ref(),
-      user_account.is_creator.to_string().as_bytes()
+      user_account.creator.to_string().as_bytes()
     ],
     bump = user_account.bump
   )]
@@ -77,7 +75,7 @@ pub struct InitChapter<'info> {
     ],
     bump,
     space = 8 + Chapter::INIT_SPACE,
-    constraint = user_account.is_creator == true // only a creator can make chapters
+    constraint = user_account.creator == true // only a creator can make chapters
   )]
   pub chapter: Account<'info, Chapter>,
   
@@ -131,7 +129,7 @@ impl<'info> InitChapter<'info> {
         start: is_start,
         choices: Vec::new(),
         price: 0,
-        comic_bump: bumps.comic,
+        comic_bump: self.comic.bump,
         bump: bumps.chapter,
       }
     );

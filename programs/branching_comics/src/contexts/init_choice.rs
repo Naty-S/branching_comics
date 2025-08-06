@@ -8,7 +8,7 @@ use crate::{
 
 
 #[derive(Accounts)]
-#[instruction(choice: String)]
+#[instruction(user_choice: String)]
 pub struct InitChoice<'info> {
   
   #[account(mut)]
@@ -19,7 +19,7 @@ pub struct InitChoice<'info> {
     seeds = [
       b"user",
       user_account.user.key().as_ref(),
-      user_account.is_creator.to_string().as_bytes()
+      user_account.creator.to_string().as_bytes()
     ],
     bump = user_account.bump
   )]
@@ -52,11 +52,11 @@ pub struct InitChoice<'info> {
     seeds = [
       b"choice",
       chapter.key().as_ref(),
-      choice.as_str().as_bytes()
+      user_choice.as_str().as_bytes()
     ],
     bump,
     space = 8 + Choice::INIT_SPACE,
-    constraint = user_account.is_creator == true // only a creator can create choices
+    constraint = user_account.creator == true // only a creator can create choices
   )]
   pub choice: Account<'info, Choice>,
 
@@ -72,7 +72,7 @@ impl<'info> InitChoice<'info> {
         chapter: self.chapter.key(),
         next_chapter: self.next_chapter.key(),
         choice,
-        chapter_bump: bumps.chapter,
+        chapter_bump: self.chapter.bump,
         bump: bumps.choice,
       }
     );
