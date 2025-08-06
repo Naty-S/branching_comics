@@ -46,9 +46,9 @@ pub mod branching_comics {
         ctx.accounts.init_chapter(is_start, &ctx.bumps)
     }
 
-    pub fn list_chapter(ctx: Context<ListChapter>) -> Result<()> {
+    pub fn list_chapter(ctx: Context<ListChapter>, price: u64) -> Result<()> {
         
-        Ok(())
+        ctx.accounts.list_chapter(price)
     }
 
     pub fn purchase_chapter(ctx: Context<PurchaseChapter>) -> Result<()> {
