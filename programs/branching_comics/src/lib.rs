@@ -53,7 +53,9 @@ pub mod branching_comics {
 
     pub fn purchase_chapter(ctx: Context<PurchaseChapter>) -> Result<()> {
         
-        Ok(())
+        ctx.accounts.pay_seller()?;
+        ctx.accounts.send_chapter()?;
+        ctx.accounts.close_vault()
     }
 
     // ==========
