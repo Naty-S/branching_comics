@@ -33,6 +33,7 @@ pub struct InitChoice<'info> {
       chapter.comic.key().as_ref()
     ],
     bump = chapter.bump,
+    constraint = chapter.next == None // Is end chapter
   )]
   pub chapter: Account<'info, Chapter>,
 
