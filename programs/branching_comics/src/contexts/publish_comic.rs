@@ -10,11 +10,22 @@ use crate::{
 pub struct PublishComic<'info> {
   
   #[account(mut)]
-  pub creator: Signer<'info>,
+  pub user: Signer<'info>,
+
+  #[account(
+    has_one = user,
+    seeds = [
+      b"user",
+      user_account.user.key().as_ref(),
+      user_account.creator.to_string().as_bytes()
+    ],
+    bump = user_account.bump,
+    constraint = user_account.creator == true
+  )]
+  pub user_account: Account<'info, User>,
 
   #[account(
     mut,
-    has_one = creator,
     seeds = [
       b"comic",
       comic.creator.key().as_ref(),
@@ -31,8 +42,8 @@ impl<'info> PublishComic<'info> {
 
   pub fn publish_comic(&mut self) -> Result<()> {
 
-    // require!(self.comic.creator == self.user.key(), ComicErrors::NotComicCreator);
-    require!(self.user.creator == true, ComicErrors::NotCreator);
+    require!(self.comic.creator == self.user.key(), ComicErrors::NotComicCreator);
+    // require!(self.user_account.creator == true, ComicErrors::NotCreator);
 
     self.comic.published = true;
 
