@@ -34,7 +34,7 @@ pub mod branching_comics {
 
     pub fn publish_comic(ctx: Context<PublishComic>) -> Result<()> {
         
-        Ok(())
+        ctx.accounts.publish_comic()
     }
 
     // ==========
