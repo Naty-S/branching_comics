@@ -41,4 +41,6 @@ pub enum ComicErrors {
   ChoiceSelected,
   #[msg("Choice not found in this chapter")]
   ChoiceNotFound,
+  #[msg("Choice is not the one selected")]
+  NoSelectedChoice,
 }
