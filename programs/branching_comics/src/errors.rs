@@ -33,6 +33,9 @@ pub enum ComicErrors {
   #[msg("Chapter is not the end of the branch/path")]
   NoEndChapter,
 
+  #[msg("Chapter price must be greater than zero")]
+  InvalidChapterPrice,
+
   // ==========
   // Choice
   // ==========
