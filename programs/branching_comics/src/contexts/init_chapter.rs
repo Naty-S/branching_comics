@@ -1,33 +1,32 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    metadata::{
-      MasterEditionAccount
-    , Metadata
-    , MetadataAccount
-  }
-  , token_interface::{
-      Mint
-    , TokenInterface
-  }
+use mpl_core::{
+    instructions::CreateV1CpiBuilder
+  , types::{
+      Attribute
+    , Attributes
+    // , DataState
+    , PluginAuthorityPair
+  },
 };
 
 use crate::{
-  User,
-  Comic,
-  Chapter
+  errors::ComicErrors,
+  state::{
+      User
+    , Comic
+    , Chapter
+  }
 };
 
-
 #[derive(Accounts)]
-#[instruction(is_start: bool)]
-pub struct InitChapter<'info> {
-  
-  // ==========
-  // Related accounts
-  // ==========
+pub struct ChapterCreation<'info> {
 
   #[account(mut)]
   pub user: Signer<'info>,
+
+  // ==========
+  // PDA's
+  // ==========
 
   #[account(
     has_one = user,
@@ -43,10 +42,12 @@ pub struct InitChapter<'info> {
   #[account(
     seeds = [
       b"comic",
+      comic.collection.key().as_ref(),
       comic.creator.key().as_ref(),
       comic.title.as_str().as_bytes()
     ],
     bump = comic.bump,
+    constraint = comic.published == true @ ComicErrors::NoPublishedComic // Only published comics can have chapters
   )]
   pub comic: Account<'info, Comic>,
 
@@ -61,13 +62,11 @@ pub struct InitChapter<'info> {
   )]
   pub parent: Account<'info, Chapter>,
   
-  // ==========
-  // Chapter accounts
-  // ==========
-  
   #[account(
     init,
     payer = user,
+    has_one = mint,
+    has_one = comic,
     seeds = [
       b"chapter",
       mint.key().as_ref(),
@@ -75,50 +74,43 @@ pub struct InitChapter<'info> {
     ],
     bump,
     space = 8 + Chapter::INIT_SPACE,
-    constraint = user_account.creator == true // only a creator can make chapters
+    constraint = user_account.creator == true @ ComicErrors::NotCreator // only a creator can make chapters
   )]
   pub chapter: Account<'info, Chapter>,
   
-  pub mint: InterfaceAccount<'info, Mint>, // Mint of the chapter  
-  pub collection_mint: InterfaceAccount<'info, Mint>,
+  // ==========
+  // Metaplex core
+  // ==========
+  
+  /// CHECK: This is the mint account of the chapter
+  #[account(mut)]
+  pub mint: Signer<'info>,
 
-  #[account(
-    seeds = [ // follow metaplex convention
-      b"metadata",
-      metadata_program.key().as_ref(),
-      mint.key().as_ref()
-    ],
-    seeds::program = metadata_program.key(),
-    bump,
-    constraint = metadata.collection.as_ref().unwrap().key.as_ref() == collection_mint.key().as_ref(),
-    constraint = metadata.collection.as_ref().unwrap().verified == true
-  )]
-  pub metadata: Account<'info, MetadataAccount>,
+  /// CHECK: This is the Chaper's Collection and will be checked by the Metaplex Core program
+  #[account(mut)]
+  pub collection_comic: UncheckedAccount<'info>,
 
+  /// CHECK: This is the authority of the collection and it is unitialized
   #[account(
-    seeds = [
-      b"metadata",
-      metadata_program.key().as_ref(),
-      mint.key().as_ref(),
-      b"edition"
-    ],
-    seeds::program = metadata_program.key(),
+    seeds = [b"authority", collection_comic.key().as_ref()],
     bump,
   )]
-  pub master_edition: Account<'info, MasterEditionAccount>,
+  pub collection_comic_authority: UncheckedAccount<'info>,
 
   // ==========
   // Programs
   // ==========
   
   pub system_program: Program<'info, System>,
-  pub token_program: Interface<'info, TokenInterface>,
-  pub metadata_program: Program<'info, Metadata>
+
+  /// CHECK: This is the ID of the Metaplex Core program
+  #[account(address = mpl_core::ID)]
+  pub mpl_core_program: UncheckedAccount<'info>
 }
 
-impl<'info> InitChapter<'info> {
+impl<'info> ChapterCreation<'info> {
 
-  pub fn init_chapter(&mut self, is_start: bool, bumps: &InitChapterBumps) -> Result<()> {
+  pub fn init_chapter(&mut self, is_start: bool, bumps: &ChapterCreationBumps) -> Result<()> {
 
     self.chapter.set_inner(
       Chapter {
@@ -134,8 +126,54 @@ impl<'info> InitChapter<'info> {
       }
     );
 
+    // Link this chapter to parent only if isn't the start of a branch
     if !is_start { self.parent.next = Some(self.chapter.key()); };
 
     Ok(())
+  }
+
+  pub fn mint_chapter(
+    &mut self,
+    name: String,
+    uri: String,
+    bumps: &ChapterCreationBumps
+  ) -> Result<()> {
+
+    let seeds: [&[&[u8]]; 1] = [&[
+      b"authority",
+      self.collection_comic.to_account_info().key.as_ref(),
+      &[bumps.collection_comic_authority],
+    ]];
+
+    let attribute_list = vec![
+      Attribute {
+        key: "Name".to_string(), 
+        value: name.to_string() 
+      },
+      Attribute {
+        key: "Start".to_string(), 
+        value: (&self.chapter.start).to_string()
+      }
+    ];
+
+    CreateV1CpiBuilder::new(&self.mpl_core_program.to_account_info())
+      .asset(&self.mint.to_account_info())
+      .collection(Some(&self.collection_comic.to_account_info()))
+      .authority(Some(&self.collection_comic_authority.to_account_info()))
+      .payer(&self.user.to_account_info())
+      .owner(Some(&self.user.to_account_info()))
+      .update_authority(None)// Not changing the NFT itself
+      .system_program(&self.system_program.to_account_info())
+      // .data_state(DataState::AccountState) -> this is the default
+      .name(name)
+      .uri(uri)
+      .plugins(vec![PluginAuthorityPair {
+        plugin: mpl_core::types::Plugin::Attributes(Attributes { attribute_list }),
+        authority: None
+      }])
+      .invoke_signed(&seeds)?;
+
+    Ok(())
+
   }
 }

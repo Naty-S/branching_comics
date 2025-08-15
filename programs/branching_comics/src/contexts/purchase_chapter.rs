@@ -48,6 +48,17 @@ pub struct PurchaseChapter<'info> {
   
   pub mint: InterfaceAccount<'info, Mint>, // Mint of the chapter
 
+  /// CHECK: This is the Chaper's Collection and will be checked by the Metaplex Core program
+  #[account(mut)]
+  pub chapter_collection: UncheckedAccount<'info>,
+
+  /// CHECK: This is the authority of the collection and it is unitialized
+  #[account(
+    seeds = [b"authority", chapter_collection.key().as_ref()],
+    bump,
+  )]
+  pub chapter_collection_authority: UncheckedAccount<'info>,
+
   // ==========
   // Escrow accounts
   // ==========
@@ -75,6 +86,10 @@ pub struct PurchaseChapter<'info> {
   pub system_program: Program<'info, System>,
   pub token_program: Interface<'info, TokenInterface>,
   pub associated_token_program: Program<'info, AssociatedToken>,
+
+  /// CHECK: This is the ID of the Metaplex Core program
+  #[account(address = mpl_core::ID)]
+  pub mpl_core_program: UncheckedAccount<'info>
 }
 
 impl<'info> PurchaseChapter<'info> {
@@ -96,7 +111,7 @@ impl<'info> PurchaseChapter<'info> {
   }
 
   pub fn send_chapter(&mut self,) -> Result<()> {
-
+    
     let accounts = TransferChecked {
       from: self.chapter_vault.to_account_info(),
       to: self.buyer_chapter_ata.to_account_info(),

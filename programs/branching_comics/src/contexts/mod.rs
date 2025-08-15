@@ -1,6 +1,5 @@
 // modules
 pub mod init_user;
-pub mod init_comic;
 pub mod publish_comic;
 pub mod init_chapter;
 pub mod list_chapter;
@@ -10,7 +9,6 @@ pub mod make_choice;
 
 // imports
 pub use init_user::*;
-pub use init_comic::*;
 pub use publish_comic::*;
 pub use init_chapter::*;
 pub use list_chapter::*;

@@ -1,17 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken
-  , metadata::{
-      MasterEditionAccount
-    , Metadata
-    , MetadataAccount
-  }
   , token_interface::{
       Mint
-    , MintTo
     , TokenAccount
     , TokenInterface
-    , mint_to
+    , TransferChecked
+    , transfer_checked
   }
 };
 
@@ -27,12 +22,12 @@ use crate::{
 #[derive(Accounts)]
 pub struct ListChapter<'info> {
   
-  // ==========
-  // Related accounts
-  // ==========
-
   #[account(mut)]
   pub user: Signer<'info>,
+
+  // ==========
+  // PDA's
+  // ==========
 
   #[account(
     has_one = user,
@@ -48,18 +43,15 @@ pub struct ListChapter<'info> {
   #[account(
     seeds = [
       b"comic",
+      comic.collection.key().as_ref(),
       comic.creator.key().as_ref(),
       comic.title.as_str().as_bytes()
     ],
     bump = comic.bump,
-    constraint = comic.published == true // Only published comics can have chapters listed
+    constraint = comic.published == true @ ComicErrors::NoPublishedComic // Only published comics can have chapters listed
   )]
   pub comic: Account<'info, Comic>,
 
-  // ==========
-  // Chapter accounts
-  // ==========
-  
   #[account(
     mut,
     has_one = mint,
@@ -69,37 +61,28 @@ pub struct ListChapter<'info> {
       chapter.mint.key().as_ref(),
       chapter.comic.key().as_ref()
     ],
-    bump = chapter.bump
+    bump = chapter.bump,
+    constraint = chapter.owner == user.key() @ ComicErrors::NotChapterOwner,
   )]
   pub chapter: Account<'info, Chapter>,
   
-  pub mint: InterfaceAccount<'info, Mint>, // Mint of the chapter  
-  pub collection_mint: InterfaceAccount<'info, Mint>,
+  // ==========
+  // Metaplex core
+  // ==========
+  
+  // The chapter (MPL Core NFT) to be listed
+  pub mint: InterfaceAccount<'info, Mint>,
 
-  #[account(
-    seeds = [ // follow metaplex convention
-      b"metadata",
-      metadata_program.key().as_ref(),
-      mint.key().as_ref()
-    ],
-    seeds::program = metadata_program.key(),
-    bump,
-    constraint = metadata.collection.as_ref().unwrap().key.as_ref() == collection_mint.key().as_ref(),
-    constraint = metadata.collection.as_ref().unwrap().verified == true
-  )]
-  pub metadata: Account<'info, MetadataAccount>,
+  /// CHECK: This is the Chaper's Collection and will be checked by the Metaplex Core program
+  #[account(mut)]
+  pub collection_comic: UncheckedAccount<'info>,
 
+  /// CHECK: This is the authority of the collection and it is unitialized
   #[account(
-    seeds = [
-      b"metadata",
-      metadata_program.key().as_ref(),
-      mint.key().as_ref(),
-      b"edition"
-    ],
-    seeds::program = metadata_program.key(),
+    seeds = [b"authority", collection_comic.key().as_ref()],
     bump,
   )]
-  pub master_edition: Account<'info, MasterEditionAccount>,
+  pub collection_comic_authority: UncheckedAccount<'info>,
 
   // ==========
   // Escrow accounts
@@ -114,6 +97,14 @@ pub struct ListChapter<'info> {
   )]
   pub chapter_vault: InterfaceAccount<'info, TokenAccount>,
   
+  #[account(
+    mut,
+    associated_token::mint = mint,
+    associated_token::authority = user,
+    associated_token::token_program = token_program
+  )]
+  pub chapter_user_ata: InterfaceAccount<'info, TokenAccount>,
+  
   // ==========
   // Programs
   // ==========
@@ -121,40 +112,38 @@ pub struct ListChapter<'info> {
   pub system_program: Program<'info, System>,
   pub token_program: Interface<'info, TokenInterface>,
   pub associated_token_program: Program<'info, AssociatedToken>,
-  pub metadata_program: Program<'info, Metadata>
+
+  /// CHECK: This is the ID of the Metaplex Core program
+  #[account(address = mpl_core::ID)]
+  pub mpl_core_program: UncheckedAccount<'info>
+
 }
 
 impl<'info> ListChapter<'info> {
 
   pub fn list_chapter(&mut self, price: u64) -> Result<()> {
 
-    require!(self.chapter.owner == self.user.key(), ComicErrors::NotChapterOwner);
-    // require!(self.comic.published == true, ComicErrors::NoPublishedComic);
+    require!(price > 0 , ComicErrors::InvalidChapterPrice);
 
     // Set chapter's price
     self.chapter.price = price;
 
-    // Mint chapter to vault (transfer)
+    // Transfer chapter to vault
 
-    let accounts = MintTo {
-      mint: self.mint.to_account_info(),
-      to: self.chapter_vault.to_account_info(),
-      authority: self.chapter.to_account_info(), // or user? the chapter is the escrow, right?
+    // if user has ATA -> transfer to vault
+    // else -> mint chapter to vault
+
+    let cpi_program = self.token_program.to_account_info();
+
+    let cpi_accounts = TransferChecked {
+        mint: self.mint.to_account_info()
+      , from: self.chapter_user_ata.to_account_info()
+      , to: self.chapter_vault.to_account_info()
+      , authority: self.user.to_account_info()
     };
 
-    let seeds: [&[&[u8]]; 1] = [&[
-      b"chapter",
-      self.chapter.mint.as_ref(),
-      self.chapter.comic.as_ref(),
-      &[self.chapter.bump]
-    ]];
+    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-    let ctx = CpiContext::new_with_signer(
-      self.token_program.to_account_info(),
-      accounts,
-      &seeds
-    );
-    
-    mint_to(ctx, 1)
+    transfer_checked(cpi_ctx, self.chapter_user_ata.amount, self.mint.decimals) // amount should be 1
   }
 }
