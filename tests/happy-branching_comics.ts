@@ -54,13 +54,21 @@ describe("Common branching_comics flow", () => {
   const umi = createUmi(connection).use(mplCore());
 
   // Wallets and accounts to be used
+  
+  // Users
   let creator_wallet: Keypair;
   let reader_wallet: Keypair;
   let creator_user_pda: PublicKey;
-  let buyer_user_pda: PublicKey;
+  let reader_user_pda: PublicKey;
+
+  // Configure comic
+  const comic_title = "Test Comic";
+  const comic_uri = "https://comic.io/comic.json";
+  const comic_0_collection = Keypair.generate();
+  const comic_0_collection_authority_pda = helpers.get_comic_collection_authority(comic_0_collection.publicKey, program.programId);
   let comic_0_pda: PublicKey;
-  let comic_0_collection: Keypair;
-  let comic_0_collection_authority_pda: PublicKey;
+
+  // Configure chapters
   let chapter_0_start_mint: Keypair; // generateSigner(umi)
   let chapter_0_start_pda: PublicKey;
   let chapter_0_1_mint: Keypair;
@@ -83,10 +91,14 @@ describe("Common branching_comics flow", () => {
 
   before(async () => {
 
-    // create and fund users
+    // Create and fund users
     creator_wallet = await helpers.gen_wallet(connection);
     reader_wallet = await helpers.gen_wallet(connection);
+    creator_user_pda = helpers.get_user_pda(creator_wallet.publicKey, true, program.programId);
+    reader_user_pda = helpers.get_user_pda(reader_wallet.publicKey, false, program.programId);
 
+    // Configure comic
+    comic_0_pda = helpers.get_comic_pda(comic_title, creator_wallet.publicKey, comic_0_collection.publicKey, program.programId);
   });
 
   after(async () => {
@@ -100,8 +112,6 @@ describe("Common branching_comics flow", () => {
 
   it("Init creator and reader (buyer)", async () => {
     
-    creator_user_pda = helpers.get_user_pda(creator_wallet.publicKey, true, program.programId);
-    
     await program.methods.initUser(true)
       .accountsPartial({
         user: creator_wallet.publicKey,
@@ -112,12 +122,29 @@ describe("Common branching_comics flow", () => {
       .rpc()
       .then(signature => helpers.confirm(connection, signature))
       .then(signature => helpers.log(connection, signature, "Creator user initialized"));
-    
-    const user_account = await program.account.user.fetch(creator_user_pda);
 
-    expect(user_account.creator, "Fail to init a creator").to.be.true;
-    
+    const creator_user_account = await program.account.user.fetch(creator_user_pda);
+
+    expect(creator_user_account.creator, "Fail to init a creator").to.be.true;
+
     console.log("User initialized as creator successfully");
+
+    await program.methods.initUser(false)
+      .accountsPartial({
+        user: reader_wallet.publicKey,
+        userAccount: reader_user_pda,
+        systemProgram: SYSTEM_PROGRAM_ID,
+      })
+      .signers([reader_wallet])
+      .rpc()
+      .then(signature => helpers.confirm(connection, signature))
+      .then(signature => helpers.log(connection, signature, "User initialized"));
+
+    const reader_user_account = await program.account.user.fetch(reader_user_pda);
+
+    expect(reader_user_account.creator, "Fail to init an user").to.be.false;
+
+    console.log("User initialized successfully");
   });
   
   // ==========
@@ -125,6 +152,30 @@ describe("Common branching_comics flow", () => {
   // ==========
 
   it("Creator user publish a comic", async () => {
+
+    await program.methods.publishNewComic(comic_title, comic_uri)
+      .accountsPartial({
+        user: creator_wallet.publicKey,
+        userAccount: creator_user_pda,
+        collectionComic: comic_0_collection.publicKey,
+        collectionComicAuthority: comic_0_collection_authority_pda,
+        systemProgram: SYSTEM_PROGRAM_ID
+      })
+      .signers([creator_wallet, comic_0_collection])
+      .rpc()
+      .then(signature => helpers.confirm(connection, signature))
+      .then(signature => helpers.log(connection, signature, "Comic published"));
+
+      const comic_account = await program.account.comic.fetch(comic_0_pda);
+
+    console.log(comic_account.creator.toBase58(), "Comic creator");
+    console.log(creator_wallet.publicKey.toBase58(), "Comic creator wallet");
+    expect(comic_account.creator.equals(creator_wallet.publicKey), "Comic creator is not correct");
+    expect(comic_account.title).to.equal(comic_title, "Comic title is not correct");
+    expect(comic_account.collection.equals(comic_0_collection.publicKey), "Comic collection is not correct");
+    expect(comic_account.published, "Fail to publish comic").to.be.true;
+
+    console.log("Comic published successfully");
   });
   it("Creator user unpublish a comic", async () => {
   });
