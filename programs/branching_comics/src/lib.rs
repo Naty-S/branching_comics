@@ -27,12 +27,23 @@ pub mod branching_comics {
     // Comic
     // ==========
 
-    pub fn init_comic(ctx: Context<InitComic>, title: String) -> Result<()> {
+    pub fn publish_new_comic(
+        ctx: Context<ComicPublishing>,
+        title: String,
+        uri: String,
+    ) -> Result<()> {
         
-        ctx.accounts.init_comic(title, &ctx.bumps)
+        ctx.accounts.init_comic(title, &ctx.bumps)?;
+        ctx.accounts.create_comic(uri, &ctx.bumps)?;
+        ctx.accounts.publish_comic()
     }
 
-    pub fn publish_comic(ctx: Context<PublishComic>) -> Result<()> {
+    // pub fn unpublish_comic(ctx: Context<UnpublishComic>) -> Result<()> {
+        
+    //     ctx.accounts.unpublish_comic()
+    // }
+
+    pub fn republish_comic(ctx: Context<ComicPublishing>) -> Result<()> {
         
         ctx.accounts.publish_comic()
     }
@@ -41,9 +52,15 @@ pub mod branching_comics {
     // Chapter
     // ==========
 
-    pub fn init_chapter(ctx: Context<InitChapter>, is_start: bool) -> Result<()> {
+    pub fn create_chapter(
+        ctx: Context<ChapterCreation>,
+        is_start: bool,
+        name: String,
+        uri: String
+    ) -> Result<()> {
         
-        ctx.accounts.init_chapter(is_start, &ctx.bumps)
+        ctx.accounts.init_chapter(is_start, &ctx.bumps)?;
+        ctx.accounts.mint_chapter(name, uri, &ctx.bumps)
     }
 
     pub fn list_chapter(ctx: Context<ListChapter>, price: u64) -> Result<()> {
@@ -62,9 +79,10 @@ pub mod branching_comics {
     // Choice
     // ==========
     
-    pub fn init_choice(ctx: Context<InitChoice>, choice: String) -> Result<()> {
+    pub fn create_choice(ctx: Context<CreateChoice>, choice: String) -> Result<()> {
         
-        ctx.accounts.init_choice(choice, &ctx.bumps)
+        ctx.accounts.init_choice(choice, &ctx.bumps)?;
+        ctx.accounts.add_choice_to_chapter()
     }
 
     pub fn make_choice(ctx: Context<MakeChoice>, choice: String) -> Result<()> {
