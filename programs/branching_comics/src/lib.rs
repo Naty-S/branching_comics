@@ -63,12 +63,12 @@ pub mod branching_comics {
         ctx.accounts.mint_chapter(name, uri, &ctx.bumps)
     }
 
-    pub fn list_chapter(ctx: Context<ListChapter>, price: u64) -> Result<()> {
+    pub fn list_chapter(ctx: Context<ChapterListing>, price: u64) -> Result<()> {
         
         ctx.accounts.list_chapter(price)
     }
 
-    pub fn purchase_chapter(ctx: Context<PurchaseChapter>) -> Result<()> {
+    pub fn purchase_chapter(ctx: Context<ChapterPurchase>) -> Result<()> {
         
         ctx.accounts.pay_seller()?;
         ctx.accounts.send_chapter()?;
@@ -85,7 +85,7 @@ pub mod branching_comics {
         ctx.accounts.add_choice_to_chapter()
     }
 
-    pub fn make_choice(ctx: Context<MakeChoice>, choice: String) -> Result<()> {
+    pub fn make_choice(ctx: Context<ChoiceSelection>, choice: String) -> Result<()> {
         
         ctx.accounts.make_choice(choice)
     }
