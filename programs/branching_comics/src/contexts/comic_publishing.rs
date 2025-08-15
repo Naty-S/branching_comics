@@ -44,7 +44,6 @@ pub struct ComicPublishing<'info> {
     space = 8 + Comic::INIT_SPACE,
     bump,
     constraint = user_account.creator == true @ ComicErrors::NotCreator, // only a creator can make comics
-    constraint = comic.creator == user.key() @ ComicErrors::NotComicCreator
   )]
   pub comic: Account<'info, Comic>,
 
@@ -97,7 +96,9 @@ impl<'info> ComicPublishing<'info> {
     uri: String,
     bumps: &ComicPublishingBumps
   ) -> Result<()> {
-    
+
+    require!(&self.comic.creator == &self.user.key(), ComicErrors::NotComicCreator);
+
     let seeds: [&[&[u8]]; 1] = [&[
       b"authority",
       self.collection_comic.to_account_info().key.as_ref(),
@@ -117,6 +118,8 @@ impl<'info> ComicPublishing<'info> {
   }
 
   pub fn publish_comic(&mut self) -> Result<()> {
+
+    require!(&self.comic.creator == &self.user.key(), ComicErrors::NotComicCreator);
 
     self.comic.published = true;
 
