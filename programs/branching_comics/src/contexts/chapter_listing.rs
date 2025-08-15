@@ -20,7 +20,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct ListChapter<'info> {
+pub struct ChapterListing<'info> {
   
   #[account(mut)]
   pub user: Signer<'info>,
@@ -119,7 +119,7 @@ pub struct ListChapter<'info> {
 
 }
 
-impl<'info> ListChapter<'info> {
+impl<'info> ChapterListing<'info> {
 
   pub fn list_chapter(&mut self, price: u64) -> Result<()> {
 

@@ -18,7 +18,7 @@ use crate::{state::Chapter};
 
 
 #[derive(Accounts)]
-pub struct PurchaseChapter<'info> {
+pub struct ChapterPurchase<'info> {
   
   // ==========
   // Related accounts
@@ -92,7 +92,7 @@ pub struct PurchaseChapter<'info> {
   pub mpl_core_program: UncheckedAccount<'info>
 }
 
-impl<'info> PurchaseChapter<'info> {
+impl<'info> ChapterPurchase<'info> {
 
   pub fn pay_seller(&mut self,) -> Result<()> {
 

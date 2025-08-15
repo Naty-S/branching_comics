@@ -7,7 +7,7 @@ use crate::{
 
 
 #[derive(Accounts)]
-pub struct MakeChoice<'info> {
+pub struct ChoiceSelection<'info> {
   
   #[account(mut)]
   pub user: Signer<'info>,
@@ -37,7 +37,7 @@ pub struct MakeChoice<'info> {
   pub system_program: Program<'info, System>
 }
 
-impl<'info> MakeChoice<'info> {
+impl<'info> ChoiceSelection<'info> {
 
   pub fn make_choice(&mut self, choice: String) -> Result<()> {
 

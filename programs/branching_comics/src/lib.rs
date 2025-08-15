@@ -79,7 +79,7 @@ pub mod branching_comics {
     // Choice
     // ==========
     
-    pub fn create_choice(ctx: Context<CreateChoice>, choice: String) -> Result<()> {
+    pub fn create_choice(ctx: Context<ChoiceCreation>, choice: String) -> Result<()> {
         
         ctx.accounts.init_choice(choice, &ctx.bumps)?;
         ctx.accounts.add_choice_to_chapter()

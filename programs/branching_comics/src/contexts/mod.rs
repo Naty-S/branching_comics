@@ -1,17 +1,17 @@
 // modules
 pub mod init_user;
-pub mod publish_comic;
-pub mod init_chapter;
-pub mod list_chapter;
-pub mod purchase_chapter;
-pub mod init_choice;
-pub mod make_choice;
+pub mod comic_publishing;
+pub mod chapter_creation;
+pub mod chapter_listing;
+pub mod chapter_purchase;
+pub mod choice_creation;
+pub mod choice_selection;
 
 // imports
 pub use init_user::*;
-pub use publish_comic::*;
-pub use init_chapter::*;
-pub use list_chapter::*;
-pub use purchase_chapter::*;
-pub use init_choice::*;
-pub use make_choice::*;
+pub use comic_publishing::*;
+pub use chapter_creation::*;
+pub use chapter_listing::*;
+pub use chapter_purchase::*;
+pub use choice_creation::*;
+pub use choice_selection::*;

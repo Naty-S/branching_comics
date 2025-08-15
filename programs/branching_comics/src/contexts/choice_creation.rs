@@ -9,7 +9,7 @@ use crate::{
 
 #[derive(Accounts)]
 #[instruction(user_choice: String)]
-pub struct CreateChoice<'info> {
+pub struct ChoiceCreation<'info> {
   
   #[account(mut)]
   pub user: Signer<'info>,
@@ -64,9 +64,9 @@ pub struct CreateChoice<'info> {
   pub system_program: Program<'info, System>
 }
 
-impl<'info> CreateChoice<'info> {
+impl<'info> ChoiceCreation<'info> {
 
-  pub fn init_choice(&mut self, choice: String, bumps: &CreateChoiceBumps) -> Result<()> {
+  pub fn init_choice(&mut self, choice: String, bumps: &ChoiceCreationBumps) -> Result<()> {
 
     self.choice.set_inner(
       Choice {
