@@ -115,6 +115,20 @@ export const get_comic_pda = (
   )[0];
 };
 
+export const get_comic_collection_authority = (
+  collection: PublicKey,
+  program_id: PublicKey
+): PublicKey => {
+  
+  return PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("authority"),
+      collection.toBuffer(),
+    ],
+    program_id
+  )[0];
+};
+
 export const get_chapter_pda = (
   comic: PublicKey,
   mint: PublicKey,
