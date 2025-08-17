@@ -60,13 +60,11 @@ pub struct ChapterCreation<'info> {
     ],
     bump = parent.bump
   )]
-  pub parent: Account<'info, Chapter>,
+  pub parent: Option<Account<'info, Chapter>>,
   
   #[account(
     init,
     payer = user,
-    has_one = mint,
-    has_one = comic,
     seeds = [
       b"chapter",
       mint.key().as_ref(),
@@ -127,7 +125,13 @@ impl<'info> ChapterCreation<'info> {
     );
 
     // Link this chapter to parent only if isn't the start of a branch
-    if !is_start { self.parent.next = Some(self.chapter.key()); };
+    if !is_start {
+      let mut _parent = self.parent.clone().unwrap();
+      // msg!("Linking chapter {} to parent {}", self.chapter.key(), _parent.key());
+      _parent.next = Some(self.chapter.key());
+      self.parent = Some(_parent);
+      // msg!("Parent chapter: {}", &self.parent.as_ref().unwrap().next.unwrap());
+    };
 
     Ok(())
   }
@@ -138,6 +142,9 @@ impl<'info> ChapterCreation<'info> {
     uri: String,
     bumps: &ChapterCreationBumps
   ) -> Result<()> {
+
+    require!(&self.chapter.comic == &self.comic.key(), ComicErrors::ChapterInvalidComic);
+    require!(&self.chapter.mint == &self.mint.key(), ComicErrors::ChapterInvalidMint);
 
     let seeds: [&[&[u8]]; 1] = [&[
       b"authority",

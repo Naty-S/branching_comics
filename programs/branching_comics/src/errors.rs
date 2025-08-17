@@ -29,12 +29,14 @@ pub enum ComicErrors {
 
   #[msg("Chapter has no choices")]
   NoChoicesChapter,
-
   #[msg("Chapter is not the end of the branch/path")]
   NoEndChapter,
-
   #[msg("Chapter price must be greater than zero")]
   InvalidChapterPrice,
+  #[msg("Chapter not from this comic")]
+  ChapterInvalidComic,
+  #[msg("Mint is not for this Chapter")]
+  ChapterInvalidMint,
 
   // ==========
   // Choice
