@@ -31,10 +31,19 @@ export const confirm = async (connection: Connection, signature: string): Promis
 export const log = (connection: Connection, signature: string, info: string): string => {
   
   console.log(
-    `\n${info}\
+    `\n${info}:\
     \nTransaction: https://explorer.solana.com/transaction/${signature}?cluster=custom&customUrl=${connection.rpcEndpoint}`
   );
   
+  return signature;
+};
+
+export const log_anchor = async (connection: Connection, signature: string,): Promise<string> => {
+  
+  const info = await connection.getParsedTransaction(signature, { commitment: "confirmed" });
+
+  console.log("Anchor Logs:", info?.meta?.logMessages);
+
   return signature;
 };
 
@@ -137,7 +146,7 @@ export const get_chapter_pda = (
   
   return PublicKey.findProgramAddressSync(
     [
-      Buffer.from("chpater"),
+      Buffer.from("chapter"),
       mint.toBuffer(),
       comic.toBuffer()
     ],
