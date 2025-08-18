@@ -8,7 +8,8 @@ mod errors;
 pub use contexts::*;
 pub use state::*;
 
-declare_id!("5YZMwaJFBUn3nwRocRYTm37qarZexjHd8pXmAbDrQjEg");
+// declare_id!("5YZMwaJFBUn3nwRocRYTm37qarZexjHd8pXmAbDrQjEg"); // localnet
+declare_id!("9k7iP2CnoP1e3nVuFsFkMFQgiKCAPAMgVwSvutixTHSD"); // devnet
 
 #[program]
 pub mod branching_comics {
