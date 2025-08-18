@@ -1,11 +1,12 @@
 use anchor_lang::prelude::*;
 use mpl_core::{
-    instructions::CreateV1CpiBuilder
+  instructions::CreateV1CpiBuilder
   , types::{
       Attribute
     , Attributes
-    // , DataState
+    , Plugin
     , PluginAuthorityPair
+    , TransferDelegate
   },
 };
 
@@ -62,6 +63,7 @@ pub struct ChapterCreation<'info> {
   )]
   pub parent: Option<Account<'info, Chapter>>,
   
+  // The chapter itself will serve as the vault
   #[account(
     init,
     payer = user,
@@ -80,9 +82,11 @@ pub struct ChapterCreation<'info> {
   // Metaplex core
   // ==========
   
-  /// CHECK: This is the mint account of the chapter
-  #[account(mut)]
-  pub mint: Signer<'info>,
+  /// CHECK: This is the mint account (MPL Core NFT) of the chapter
+  // #[account(mut)]
+  // pub mint: Signer<'info>,
+  #[account(mut, signer)]
+  pub mint: UncheckedAccount<'info>,
 
   /// CHECK: This is the Chaper's Collection and will be checked by the Metaplex Core program
   #[account(mut)]
@@ -152,16 +156,25 @@ impl<'info> ChapterCreation<'info> {
       &[bumps.collection_comic_authority],
     ]];
 
-    let attribute_list = vec![
-      Attribute {
-        key: "Name".to_string(), 
-        value: name.to_string() 
-      },
-      Attribute {
-        key: "Start".to_string(), 
-        value: (&self.chapter.start).to_string()
-      }
-    ];
+    let attributes = PluginAuthorityPair {
+      plugin: Plugin::Attributes(Attributes { attribute_list: vec![
+        Attribute {
+          key: "Name".to_string(), 
+          value: name.to_string() 
+        },
+        Attribute {
+          key: "Start".to_string(), 
+          value: (&self.chapter.start).to_string()
+        }
+      ]}),
+      authority: None
+    };
+
+    // Allows the chapter's tranfers by delegate only
+    let transfer_delegate = PluginAuthorityPair {
+      plugin: Plugin::TransferDelegate(TransferDelegate {}),
+      authority: None
+    };
 
     CreateV1CpiBuilder::new(&self.mpl_core_program.to_account_info())
       .asset(&self.mint.to_account_info())
@@ -169,17 +182,18 @@ impl<'info> ChapterCreation<'info> {
       .authority(Some(&self.collection_comic_authority.to_account_info()))
       .payer(&self.user.to_account_info())
       .owner(Some(&self.user.to_account_info()))
-      .update_authority(None)// Not changing the NFT itself
+      .update_authority(None)// Not changing the NFT (metadata) itself
       .system_program(&self.system_program.to_account_info())
       // .data_state(DataState::AccountState) -> this is the default
       .name(name)
       .uri(uri)
-      .plugins(vec![PluginAuthorityPair {
-        plugin: mpl_core::types::Plugin::Attributes(Attributes { attribute_list }),
-        authority: None
-      }])
+      .plugins(vec![
+        attributes,
+        transfer_delegate
+      ])
       .invoke_signed(&seeds)?;
 
+    msg!("Chapter minted successfully: {:?}", self.mint);
     Ok(())
 
   }

@@ -1,13 +1,11 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    associated_token::AssociatedToken
-  , token_interface::{
-      Mint
-    , TokenAccount
-    , TokenInterface
-    , TransferChecked
-    , transfer_checked
-  }
+use mpl_core::{
+  instructions::{
+    ApprovePluginAuthorityV1CpiBuilder, TransferV1CpiBuilder
+  },
+  types::{
+    PluginAuthority, PluginType::TransferDelegate
+  },
 };
 
 use crate::{
@@ -70,8 +68,12 @@ pub struct ChapterListing<'info> {
   // Metaplex core
   // ==========
   
-  // The chapter (MPL Core NFT) to be listed
-  pub mint: InterfaceAccount<'info, Mint>,
+  /// CHECK: This is the mint account (MPL Core NFT) of the chapter
+  #[account(
+    mut,
+    // constraint = *mint.owner == user.key() @ ComicErrors::NotMintOwner,
+  )]
+  pub mint: UncheckedAccount<'info>,
 
   /// CHECK: This is the Chaper's Collection and will be checked by the Metaplex Core program
   #[account(mut)]
@@ -88,62 +90,60 @@ pub struct ChapterListing<'info> {
   // Escrow accounts
   // ==========
 
-  #[account(
-    init,
-    payer = user,
-    associated_token::mint = mint,
-    associated_token::authority = chapter,
-    associated_token::token_program = token_program
-  )]
-  pub chapter_vault: InterfaceAccount<'info, TokenAccount>,
-  
+  /// CHECK:
   #[account(
     mut,
-    associated_token::mint = mint,
-    associated_token::authority = user,
-    associated_token::token_program = token_program
+    seeds = [b"chapter_vault", chapter.key().as_ref()],
+    bump
   )]
-  pub chapter_user_ata: InterfaceAccount<'info, TokenAccount>,
+  pub chapter_vault: UncheckedAccount<'info>,
+
   
   // ==========
   // Programs
   // ==========
   
   pub system_program: Program<'info, System>,
-  pub token_program: Interface<'info, TokenInterface>,
-  pub associated_token_program: Program<'info, AssociatedToken>,
 
   /// CHECK: This is the ID of the Metaplex Core program
   #[account(address = mpl_core::ID)]
   pub mpl_core_program: UncheckedAccount<'info>
-
 }
 
 impl<'info> ChapterListing<'info> {
 
   pub fn list_chapter(&mut self, price: u64) -> Result<()> {
 
+    require!(self.chapter.owner == self.user.key(), ComicErrors::NotChapterOwner);
     require!(price > 0 , ComicErrors::InvalidChapterPrice);
 
     // Set chapter's price
     self.chapter.price = price;
 
     // Transfer chapter to vault
+    // msg!("Transferring chapter to vault...");
 
-    // if user has ATA -> transfer to vault
-    // else -> mint chapter to vault
+    ApprovePluginAuthorityV1CpiBuilder::new(&self.mpl_core_program.to_account_info())
+      .plugin_type(TransferDelegate)
+      .asset(&self.mint.to_account_info())
+      .authority(Some(&self.user.to_account_info()))
+      .new_authority(PluginAuthority::Address { address: self.chapter_vault.key() })
+      .payer(&self.user.to_account_info())
+      .collection(Some(&self.collection_comic.to_account_info()))
+      .system_program(&self.system_program.to_account_info())
+      .invoke()?;
 
-    let cpi_program = self.token_program.to_account_info();
+    TransferV1CpiBuilder::new(&self.mpl_core_program.to_account_info())
+      .asset(&self.mint.to_account_info())
+      .new_owner(&self.chapter_vault.to_account_info())
+      .payer(&self.user.to_account_info())
+      .collection(Some(&self.collection_comic.to_account_info()))
+      .authority(Some(&self.user.to_account_info()))
+      .system_program(Some(&self.system_program.to_account_info()))
+      .invoke()?;
+    
+    // msg!("{:?}", self.mint);
 
-    let cpi_accounts = TransferChecked {
-        mint: self.mint.to_account_info()
-      , from: self.chapter_user_ata.to_account_info()
-      , to: self.chapter_vault.to_account_info()
-      , authority: self.user.to_account_info()
-    };
-
-    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-
-    transfer_checked(cpi_ctx, self.chapter_user_ata.amount, self.mint.decimals) // amount should be 1
+    Ok(())
   }
 }

@@ -37,6 +37,8 @@ pub enum ComicErrors {
   ChapterInvalidComic,
   #[msg("Mint is not for this Chapter")]
   ChapterInvalidMint,
+  #[msg("Seller is not the owner of the Chapter's mint")]
+  NotMintOwner,
 
   // ==========
   // Choice

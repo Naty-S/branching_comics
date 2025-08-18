@@ -53,8 +53,8 @@ pub struct ComicPublishing<'info> {
   // ==========
   
   /// CHECK: This is the Chaper's Collection and will be checked by the Metaplex Core program
-  #[account(mut)]
-  pub collection_comic: Signer<'info>,
+  #[account(mut, signer)]
+  pub collection_comic: UncheckedAccount<'info>,
 
   /// CHECK: This is the authority of the collection and it is unitialized
   #[account(
