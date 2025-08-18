@@ -90,6 +90,25 @@ export const gen_wallet = async (connection: Connection): Promise<Keypair> => {
 //   await connection.sendTransaction(closeTx, [owner]);
 // };
 
+// Helper function: Retry fetching a collection
+// const fetchCollectionWithRetry = async (
+//   eventPublicKey: anchor.web3.PublicKey,
+//   retries = 50,
+//   delay = 2000
+// ) => {
+//   for (let i = 0; i < retries; i++) {
+//     try {
+//       return await fetchCollectionV1(
+//         umi,
+//         publicKey(eventPublicKey.toBase58())
+//       );
+//     } catch (error) {
+//       if (i === retries - 1) throw error;
+//       await new Promise((resolve) => setTimeout(resolve, delay));
+//     }
+//   }
+// };
+
 export const get_user_pda = (
   creator: PublicKey,
   is_creator: Boolean,
