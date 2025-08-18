@@ -45,12 +45,9 @@ impl<'info> ChoiceSelection<'info> {
     require!(self.chapter.choices.len() > 0, ComicErrors::NoChoicesChapter);
     require!(self.chapter.next == None, ComicErrors::ChoiceSelected);
     require!(self.choice.choice == choice, ComicErrors::NoSelectedChoice);
+    require!(self.chapter.choices.contains(&self.choice.key()), ComicErrors::NoSelectedChoice);
 
-    let selected_choice = self.chapter.choices.iter()
-      .find(|c| **c == self.choice.key())
-      .ok_or_else(|| error!(ComicErrors::ChoiceNotFound))?;
-
-    self.chapter.next = Some(*selected_choice);
+    self.chapter.next = Some(self.choice.next_chapter);
 
     Ok(())
   }

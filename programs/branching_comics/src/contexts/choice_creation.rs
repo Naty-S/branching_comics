@@ -1,9 +1,12 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-  User,
-  Chapter,
-  Choice
+  errors::ComicErrors,
+  state::{
+      User
+    , Chapter
+    , Choice
+  }
 };
 
 
@@ -57,7 +60,7 @@ pub struct ChoiceCreation<'info> {
     ],
     bump,
     space = 8 + Choice::INIT_SPACE,
-    constraint = user_account.creator == true // only a creator can create choices
+    constraint = user_account.creator == true @ ComicErrors::NotCreator // only a creator can create choices
   )]
   pub choice: Account<'info, Choice>,
 
