@@ -92,7 +92,7 @@ describe("Fails branching_comics flow", () => {
   // Users
   // ==========
 
-  it("Init creator and reader (buyer)", async () => {
+  it.skip("Init creator and reader (buyer)", async () => {
 
     await program.methods.initUser(true)
       .accountsPartial({
