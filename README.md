@@ -1,5 +1,8 @@
 # Branching Comics
 
+Localnet ID: "5YZMwaJFBUn3nwRocRYTm37qarZexjHd8pXmAbDrQjEg"
+Devnet ID: "9k7iP2CnoP1e3nVuFsFkMFQgiKCAPAMgVwSvutixTHSD"
+
 ## Tests
 
 ### Passing tests for common flow
